@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net"
 )
 
@@ -25,10 +27,24 @@ func main() {
 
 func handleConnection(connection net.Conn) {
 	fmt.Println(connection.RemoteAddr())
-	message := []byte("ok")
+	message := []byte("listening")
 	connection.Write(message)
-	err := connection.Close()
-	if err != nil {
-		fmt.Println(err.Error())
-	}
+
+	buffer := make([]byte, 1024)
+	var data bytes.Buffer
+
+	for {
+        n, err := connection.Read(buffer)
+        if err != nil {
+            if err == io.EOF {
+                // Fin des données
+                break
+            }
+            fmt.Println("Erreur de lecture :", err)
+            return
+        }
+        data.Write(buffer[:n])
+    }
+
+    fmt.Println("input data :", data.String())
 }
