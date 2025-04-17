@@ -26,25 +26,39 @@ func main() {
 }
 
 func handleConnection(connection net.Conn) {
-	fmt.Println(connection.RemoteAddr())
-	message := []byte("listening")
-	connection.Write(message)
+	const bufferSize = 1024;
+	
+    defer connection.Close()
 
-	buffer := make([]byte, 1024)
-	var data bytes.Buffer
+    fmt.Println(connection.RemoteAddr())
 
-	for {
+    buffer := make([]byte, bufferSize)
+    var data bytes.Buffer
+
+    for {
         n, err := connection.Read(buffer)
+
         if err != nil {
             if err == io.EOF {
-                // Fin des données
                 break
             }
             fmt.Println("Erreur de lecture :", err)
-            return
+            break
         }
+
+        fmt.Println("Nombre d'octets lus :", n)
         data.Write(buffer[:n])
+
+		if n < bufferSize {
+			break;
+		}
     }
 
-    fmt.Println("input data :", data.String())
+    fmt.Print("Données lues : ", data.String())
+
+    message := []byte("HTTP/1.1 200 OK\r\nContent-Length:2\r\n\r\nOK")
+    _, err := connection.Write(message)
+    if err != nil {
+        fmt.Println("Erreur d'écriture :", err)
+    }
 }
